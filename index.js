@@ -1,6 +1,7 @@
 require('dotenv').config() //Activa la busqueda en el archivo .env
 const { makeExecutableSchema } = require('graphql-tools') //Para crear schemas con posibilidad de recibir parametros
 const express = require('express') //Servidor
+const cors = require('cors')
 const gqlMiddleware = require('express-graphql') //Comunicación cliente-servidor
 const { readFileSync } = require('fs') //Leer asincronamente otro modulo
 const { join } = require('path') //Funcion ||join|| para usar un path
@@ -9,6 +10,7 @@ const resolvers = require('./lib/resolvers') //Traemos los resolvers
 
 const app = express() // 1) Creamos un servidor
 const port = process.env.port || 3000
+const isDev = process.env.NODE_ENV.trimRight() !== 'production' //GraphiQL no pueda usarse mientras estamos en develop
 
 // 5) Definiendo la ruta del schema ya iniciado o creado
 const typeDefs = readFileSync( //Propiedad del objeto que recibe el makeExecutableSchema
@@ -21,11 +23,12 @@ const schema = makeExecutableSchema({ typeDefs, resolvers })
 
 //Aquí irian los resolvers si fueran en el mismo modulo
 
+app.use(cors()) //Usamos el middleware de cors
 
 app.use('/api', gqlMiddleware({ // 3) Middleware = Permite comunicación cliente-servidor
   schema: schema, // Añadimos el schema de nuestra API
   rootValue: resolvers, // Añadimos a la url del API las respuestas o resolvers
-  graphiql: true // Activamos el entorno de desarrollo de graphQL
+  graphiql: isDev // Activamos el entorno de desarrollo de graphQL
 }))
 
 app.listen(port, () => { // 4) Escuchamos los llamados por parte del navegador
